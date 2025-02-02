@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Static Site Generator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Static Site Generator</h1>
+        </header>
+        
+        <main>
+            <div class="config-section">
+                <div class="main-page-config page-item">
+                    <h2>Site Configuration</h2>
+                    <div class="form-group">
+                        <label for="siteName">Site Name:</label>
+                        <input type="text" id="siteName" name="siteName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="theme">Choose Theme:</label>
+                        <select id="theme" name="theme">
+                            <option value="modern">Modern</option>
+                            <option value="minimal">Minimal</option>
+                            <option value="classic">Classic</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mainTitle">Main Page Title:</label>
+                        <input type="text" id="mainTitle" name="mainTitle" placeholder="Enter main page title...">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mainContent">Main Page Content:</label>
+                        <textarea id="mainContent" name="mainContent" placeholder="Enter main page content (Markdown supported)..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Main Page Images:</label>
+                        <div id="mainImages"></div>
+                        <button type="button" class="btn" id="addMainImage">Add Image</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pages-section">
+                <h2>Pages</h2>
+                <div id="pagesList"></div>
+                <button id="addPage" class="btn">Add New Page</button>
+            </div>
+
+            <div class="preview-section">
+                <h2>Preview</h2>
+                <div id="preview" class="preview-container">
+                    <iframe id="previewFrame" title="Site Preview"></iframe>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="generateSite" class="btn primary">Generate & Download Site</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
