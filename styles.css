@@ -11,6 +11,33 @@ body {
     background-color: #f5f5f5;
 }
 
+.preview-navigation {
+    background: #fff;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.preview-navigation a {
+    color: #333;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    margin: 0 0.25rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.preview-navigation a:hover {
+    background: #f0f0f0;
+}
+
+.preview-navigation a.active {
+    background: #3498db;
+    color: white;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -169,11 +196,27 @@ input[type="text"], select {
     margin-right: 0.5rem;
 }
 
+.gallery-title-input {
+    margin-bottom: 1rem;
+}
+
+.image-input {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
 .gallery {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1rem;
     margin: 1rem 0;
+}
+
+.gallery .gallery-title {
+    grid-column: 1 / -1; /* span all columns */
+    margin-bottom: 1rem; /* add some space below the title */
 }
 
 .gallery figure {
@@ -219,7 +262,16 @@ input[type="text"], select {
     text-decoration: none;
     padding: 0.5rem 1rem;
     border-radius: 4px;
-    transition: background-color 0.2s;
+    transition: all 0.3s ease;
+}
+
+.preview-navigation a:hover {
+    background: #f0f0f0;
+}
+
+.preview-navigation a.active {
+    background: #3498db;
+    color: white;
 }
 
 .preview-navigation a:hover {

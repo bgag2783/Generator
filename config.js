@@ -6,6 +6,7 @@ const defaultConfig = {
     theme: 'modern',
     mainTitle: '',
     mainContent: '',
+    mainGalleryTitle: '',
     mainImages: [],
     pages: []
 };

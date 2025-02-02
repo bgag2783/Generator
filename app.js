@@ -40,7 +40,7 @@ siteNameInput.addEventListener('input', handleInputChange);
 themeSelect.addEventListener('change', handleInputChange);
 mainTitleInput.addEventListener('input', handleInputChange);
 mainContentInput.addEventListener('input', handleInputChange);
-addMainImageButton.addEventListener('click', addMainImage); // Add new event listener
+addMainImageButton.addEventListener('click', addMainImage);
 addPageButton.addEventListener('click', addNewPage);
 generateButton.addEventListener('click', generateSite);
 
@@ -93,14 +93,22 @@ function renderPages() {
         const pageContent = document.createElement('div');
         pageContent.className = 'content-area';
         pageContent.innerHTML = `
-            <input type="text" value="${page.title}" 
-                   onchange="updatePageTitle(${page.id}, this.value)">
-            <textarea placeholder="Page content (Markdown supported)..." 
-                      onchange="updatePageContent(${page.id}, this.value)">${page.content}</textarea>
-            <div class="image-list" id="images-${page.id}">
-                ${generateImageInputs(page)}
-            </div>
-        `;
+    <input type="text" value="${page.title}" 
+           onchange="updatePageTitle(${page.id}, this.value)">
+    <textarea placeholder="Page content (Markdown supported)..." 
+              onchange="updatePageContent(${page.id}, this.value)">${page.content}</textarea>
+    ${typeof page.galleryTitle !== 'undefined' ? `
+    <div class="gallery-title-input">
+        <label for="galleryTitle-${page.id}">${page.title} images:</label>
+        <input type="text" value="${page.galleryTitle}" 
+               placeholder="Gallery title" 
+               onchange="updateGalleryTitle(${page.id}, this.value)">
+    </div>
+    ` : ''}
+    <div class="image-list" id="images-${page.id}">
+        ${generateImageInputs(page)}
+    </div>
+`;
 
         const addImageButton = document.createElement('button');
         addImageButton.className = 'btn';
@@ -109,7 +117,7 @@ function renderPages() {
 
         const deleteButton = document.createElement('button');
         deleteButton.className = 'btn';
-        deleteButton.textContent = 'Delete';
+        deleteButton.textContent = 'Delete page';
         deleteButton.onclick = () => deletePage(page.id);
 
         pageElement.appendChild(dragHandle);
@@ -162,10 +170,10 @@ function generateImageInputs(page) {
     return page.images.map((image, index) => `
         <div class="image-input">
             <input type="text" value="${typeof image === 'string' ? image : image?.url || ''}" 
-                   placeholder="Image URL"
+                   placeholder="Image url"
                    onchange="updateImageUrl(${page.id}, ${index}, this.value)">
             <input type="text" value="${typeof image === 'string' ? '' : image?.title || ''}" 
-                   placeholder="Image Title"
+                   placeholder="Image title"
                    onchange="updateImageTitle(${page.id}, ${index}, this.value)">
             <button class="btn remove" onclick="removeImage(${page.id}, ${index})">×</button>
         </div>
@@ -177,10 +185,24 @@ function addImageInput(pageId) {
     const page = siteConfig.pages.find(p => p.id === pageId);
     if (page) {
         page.images.push({ url: '', title: '' });
+        // If a gallery title doesn’t exist for this page, add it.
+        if (typeof page.galleryTitle === 'undefined') {
+            page.galleryTitle = '';
+        }
         renderPages();
         updatePreview();
     }
 }
+
+//Update gallery title
+function updateGalleryTitle(pageId, newTitle) {
+    const page = siteConfig.pages.find(p => p.id === pageId);
+    if (page) {
+        page.galleryTitle = newTitle;
+        updatePreview();
+    }
+}
+
 
 // Update image URL
 function updateImageUrl(pageId, index, newUrl) {
@@ -311,6 +333,16 @@ function updatePreview() {
             sections.forEach(section => {
                 section.style.display = '#' + section.id === hash ? 'block' : 'none';
             });
+
+            // Update active state of navigation links
+            doc.querySelectorAll('nav a').forEach(link => {
+                const linkHash = link.getAttribute('href');
+                if (linkHash === hash || (!hash && linkHash === '#main')) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
         };
 
         doc.querySelectorAll('nav a').forEach(link => {
@@ -341,27 +373,46 @@ const imageManager = {
         }
     },
 
+    //Main page images
     renderMainImages() {
         try {
-            mainImagesDiv.innerHTML = siteConfig.mainImages.map((image, index) => {
+            mainImagesDiv.innerHTML = `
+                <div class="gallery-title-input">
+                    <label for="mainGalleryTitle">Main page images:</label>
+                    <input type="text" value="${siteConfig.mainGalleryTitle || ''}" 
+                           id="mainGalleryTitle"
+                           placeholder="Gallery title"
+                           onchange="imageManager.updateMainGalleryTitle(this.value)">
+                </div>
+                ${siteConfig.mainImages.map((image, index) => {
                 const imageUrl = typeof image === 'string' ? image : image?.url || '';
                 const imageTitle = typeof image === 'string' ? '' : image?.title || '';
 
                 return `
-                    <div class="image-input">
-                        <input type="text" value="${imageUrl}" 
-                               placeholder="Image URL"
-                               onchange="imageManager.updateMainImageUrl(${index}, this.value)">
-                        <input type="text" value="${imageTitle}" 
-                               placeholder="Image Title"
-                               onchange="imageManager.updateMainImageTitle(${index}, this.value)">
-                        <button class="btn remove" onclick="imageManager.removeMainImage(${index})">×</button>
-                    </div>
-                `;
-            }).join('');
+                        <div class="image-input">
+                            <input type="text" value="${imageUrl}" 
+                                   placeholder="Image url"
+                                   onchange="imageManager.updateMainImageUrl(${index}, this.value)">
+                            <input type="text" value="${imageTitle}" 
+                                   placeholder="Image title"
+                                   onchange="imageManager.updateMainImageTitle(${index}, this.value)">
+                            <button class="btn remove" onclick="imageManager.removeMainImage(${index})">×</button>
+                        </div>
+                    `;
+            }).join('')}
+            `;
         } catch (error) {
             console.error('Error rendering main images:', error);
             mainImagesDiv.innerHTML = '<p>Error loading images</p>';
+        }
+    },
+
+    updateMainGalleryTitle(newTitle) {
+        try {
+            siteConfig.mainGalleryTitle = newTitle;
+            updatePreview();
+        } catch (error) {
+            console.error('Error updating image title:', error);
         }
     },
 
@@ -429,14 +480,14 @@ function generateHTML() {
         </head>
         <body class="theme-${theme}">
             <nav class="preview-navigation">
-                <a href="#main">${siteConfig.name}</a>
+                <a href="#main">Home</a>
                 ${generateNavigation()}
             </nav>
             <main>
                 <section id="main" style="display: block;">
                     <h2>${siteConfig.mainTitle || 'Main Page'}</h2>
                     <div class="content" data-markdown="${siteConfig.mainContent || ''}">${siteConfig.mainContent || ''}</div>
-                    ${generateGallery(siteConfig.mainImages)}
+                    ${generateGallery(siteConfig.mainImages, siteConfig.mainGalleryTitle)}
                 </section>
                 ${generateContent()}
             </main>
@@ -480,8 +531,9 @@ function generateHTML() {
 
 // Generate navigation
 function generateNavigation() {
+    const currentHash = window.location.hash.slice(1) || (siteConfig.pages[0]?.id || '');
     return siteConfig.pages.map(page =>
-        `<a href="#${page.id}">${page.title}</a>`
+        `<a href="#${page.id}" class="${page.id === currentHash ? 'active' : ''}">${page.title}</a>`
     ).join('');
 }
 
@@ -491,15 +543,17 @@ function generateContent() {
         <section id="${page.id}">
             <h2>${page.title}</h2>
             <div class="content" data-markdown="${page.content}">${page.content}</div>
-            ${generateGallery(page.images)}
+            ${generateGallery(page.images, page.galleryTitle)}
         </section>
     `).join('');
 }
 
 // Generate image gallery
-function generateGallery(images) {
+function generateGallery(images, galleryTitle = '') {
     if (!images.length) return '';
+    const galleryTitleHTML = galleryTitle ? `<h3 class="gallery-title">${galleryTitle}</h3>` : '';
     return `
+        ${galleryTitleHTML}
         <div class="gallery">
             ${images.map(image => {
         const url = typeof image === 'string' ? image : image?.url;
@@ -546,6 +600,10 @@ async function generateSite() {
     siteConfig.pages.forEach(page => {
         zip.file(`${page.id}.html`, generatePageHTML(page));
     });
+
+    // Add README.md
+    const readmeContent = 'Visit **your link here** to see this site in action!\n\nMade with [Brian\'s Simple Site Generator](https://bgag2783.github.io/Generator/)';
+    zip.file('README.md', readmeContent);
 
     // Add site configuration JSON
     zip.file('site-config.json', JSON.stringify(siteConfig, null, 2));
@@ -598,7 +656,7 @@ function generatePageHTML(page) {
 const importButton = document.createElement('button');
 importButton.id = 'importSite';
 importButton.className = 'btn';
-importButton.textContent = 'Import Site';
+importButton.textContent = 'Import site';
 document.querySelector('.actions').insertBefore(importButton, generateButton);
 
 // Add file input for importing
@@ -650,3 +708,4 @@ window.updatePageContent = updatePageContent;
 window.updateImageUrl = updateImageUrl;
 window.updateImageTitle = updateImageTitle;
 window.removeImage = removeImage;
+window.updateGalleryTitle = updateGalleryTitle;
