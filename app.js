@@ -616,6 +616,11 @@ async function generateSite() {
     downloadLink.href = URL.createObjectURL(content);
     downloadLink.download = `${siteConfig.name || 'site'}.zip`;
     downloadLink.click();
+
+    // Redirect to "What's Next" page after 2 seconds
+    setTimeout(() => {
+        document.getElementById('whatsNextLink').click();
+    }, 2000);
 }
 
 // Generate individual page HTML
