@@ -47,19 +47,31 @@ generateButton.addEventListener('click', generateSite);
 // Load themes when the page loads
 loadThemes();
 
+function saveToLocalStorage() {
+    localStorage.setItem('siteConfig', JSON.stringify(siteConfig));
+}
+
 // Update site configuration
+let inputTimer; 
 function handleInputChange() {
-    siteConfig = updateSiteConfig(siteConfig, {
-        name: siteNameInput.value,
-        theme: themeSelect.value,
-        mainTitle: mainTitleInput.value,
-        mainContent: mainContentInput.value
-    });
-    updatePreview();
+    clearTimeout(inputTimer); // Clear previous timer
+
+    inputTimer = setTimeout(() => {
+        saveState(); // Save state only after user stops typing
+        siteConfig = updateSiteConfig(siteConfig, {
+            name: siteNameInput.value,
+            theme: themeSelect.value,
+            mainTitle: mainTitleInput.value,
+            mainContent: mainContentInput.value
+        });
+        saveToLocalStorage();
+        updatePreview();
+    }, 500); 
 }
 
 // Add new page
 function addNewPage() {
+    saveState();
     const pageId = Date.now();
     const page = {
         id: pageId,
@@ -196,6 +208,7 @@ function addImageInput(pageId) {
 
 //Update gallery title
 function updateGalleryTitle(pageId, newTitle) {
+    saveState();
     const page = siteConfig.pages.find(p => p.id === pageId);
     if (page) {
         page.galleryTitle = newTitle;
@@ -206,6 +219,7 @@ function updateGalleryTitle(pageId, newTitle) {
 
 // Update image URL
 function updateImageUrl(pageId, index, newUrl) {
+    saveState();
     const page = siteConfig.pages.find(p => p.id === pageId);
     if (page && page.images[index] !== undefined) {
         const currentImage = page.images[index];
@@ -218,6 +232,7 @@ function updateImageUrl(pageId, index, newUrl) {
 
 // Update image title
 function updateImageTitle(pageId, index, newTitle) {
+    saveState();
     const page = siteConfig.pages.find(p => p.id === pageId);
     if (page && page.images[index] !== undefined) {
         const currentImage = page.images[index];
@@ -249,6 +264,7 @@ function updatePageTitle(pageId, newTitle) {
 
 // Update page content
 function updatePageContent(pageId, newContent) {
+    saveState();
     const page = siteConfig.pages.find(p => p.id === pageId);
     if (page) {
         page.content = newContent;
@@ -258,6 +274,7 @@ function updatePageContent(pageId, newContent) {
 
 // Delete page
 function deletePage(pageId) {
+    saveState();
     siteConfig.pages = siteConfig.pages.filter(p => p.id !== pageId);
     renderPages();
     updatePreview();
@@ -707,6 +724,82 @@ importInput.addEventListener('change', async (event) => {
     }
 });
 
+// History stacks for undo/redo
+let undoStack = [];
+let redoStack = [];
+
+// Capture state before modification
+function saveState() {
+    undoStack.push(JSON.stringify(siteConfig));
+    redoStack = []; // Clear redo stack since new changes invalidate redo history
+}
+
+// Undo action
+function undo() {
+    if (undoStack.length > 0) {
+        redoStack.push(JSON.stringify(siteConfig)); // Save current state to redo stack
+        siteConfig = JSON.parse(undoStack.pop()); // Restore previous state
+        updateUI();
+    }
+}
+
+// Redo action
+function redo() {
+    if (redoStack.length > 0) {
+        undoStack.push(JSON.stringify(siteConfig)); // Save current state to undo stack
+        siteConfig = JSON.parse(redoStack.pop()); // Restore redo state
+        updateUI();
+    }
+}
+
+// Attach Undo/Redo event listeners
+document.getElementById('undoButton').addEventListener('click', undo);
+document.getElementById('redoButton').addEventListener('click', redo);
+
+
+
+// Function to update UI after undo/redo
+function updateUI() {
+    siteNameInput.value = siteConfig.name || '';
+    themeSelect.value = siteConfig.theme || 'modern';
+    mainTitleInput.value = siteConfig.mainTitle || '';
+    mainContentInput.value = siteConfig.mainContent || '';
+
+    renderPages();
+    updatePreview();
+
+    // Enable/disable undo/redo buttons based on stack size
+    document.getElementById('undoButton').disabled = undoStack.length === 0;
+    document.getElementById('redoButton').disabled = redoStack.length === 0;
+}
+
+function loadFromLocalStorage() {
+    const savedConfig = localStorage.getItem('siteConfig');
+    if (savedConfig) {
+        siteConfig = JSON.parse(savedConfig);
+
+        // Update UI with saved configuration
+        siteNameInput.value = siteConfig.name || '';
+        themeSelect.value = siteConfig.theme || 'modern';
+        mainTitleInput.value = siteConfig.mainTitle || '';
+        mainContentInput.value = siteConfig.mainContent || '';
+
+        // Update pages and images
+        renderPages();
+        imageManager.renderMainImages();
+
+        updatePreview();
+    }
+}
+
+document.getElementById('clearStorageButton').addEventListener('click', () => {
+    if (confirm('Are you sure you want to clear saved progress? This cannot be undone.')) {
+        localStorage.removeItem('siteConfig');
+        location.reload(); // Reload the page to reset everything
+    }
+});
+
+
 // Expose functions for inline event handlers
 window.updatePageTitle = updatePageTitle;
 window.updatePageContent = updatePageContent;
@@ -714,3 +807,4 @@ window.updateImageUrl = updateImageUrl;
 window.updateImageTitle = updateImageTitle;
 window.removeImage = removeImage;
 window.updateGalleryTitle = updateGalleryTitle;
+window.addEventListener('load', loadFromLocalStorage);
